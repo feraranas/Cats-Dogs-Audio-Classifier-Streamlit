@@ -1,21 +1,11 @@
-import matplotlib.pyplot as plt
-import pandas as pd
 import streamlit as st
 
-st.title("Hello world!")
+st.title('Greatest of Three Numbers') # Set Title of the webapp
 
-df = pd.read_csv('titanic.csv')
-st.write(df)
-# Add some matplotlib code !
-fig, ax = plt.subplots()
-df.hist(
-  bins=8,
-  column="Age",
-  grid=False,
-  figsize=(8, 8),
-  color="#86bf91",
-  zorder=2,
-  rwidth=0.9,
-  ax=ax,
-)
-st.write(fig)
+choice1 = st.number_input('Enter First number') #Accepts a number input
+choice2 = st.number_input('Enter Second number')
+choice3 = st.number_input('Enter Third number')
+
+string = f'Maximum value is {max(choice1,choice2,choice3)}'
+
+st.write(string)
