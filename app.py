@@ -19,7 +19,6 @@ with open(config_path, "w") as f:
     f.write("enableCORS = false\n")
     f.write("port = $PORT\n")
 
-
 import streamlit as st
 
 st.title('Greatest of Three Numbers') # Set Title of the webapp
