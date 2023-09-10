@@ -12,6 +12,7 @@ from sklearn import metrics
 from sklearn.metrics import classification_report
 from sklearn.metrics import ConfusionMatrixDisplay
 import pickle
+import joblib
 # Models
 from sklearn.linear_model import LogisticRegression
 
@@ -120,28 +121,22 @@ log_reg_pickle = open('./models/logistic_regression_model.pkl', 'rb')
 log_reg = pickle.load(log_reg_pickle)
 knn_pickle = open('./models/knn_model.pkl', 'rb')
 knn = pickle.load(knn_pickle)
-random_forest_pickle = open('./models/random_forest_model.pkl', 'rb')
-random_forest = pickle.load(random_forest_pickle)
+naive_bayes_pickle = open('./models/naive_bayes_model.pkl', 'rb')
+naive_bayes = pickle.load(naive_bayes_pickle)
 model_col1, model_col2 = st.columns(2, gap='large')
 with model_col1:
      st.write('Linear Regression Classifier')
      st.write(log_reg)
 with model_col2:
-     st.write('Random Forest Classifier')
-
-
-model_col3, model_col4 = st.columns(2, gap='large')
-with model_col3:
      st.write('K Nearest Neighbors Classifier')
-     
-with model_col4:
-     st.write('Bayes Classifier')
-
+     st.write(knn)
+st.write('Bayes Classifier')
+st.write(naive_bayes)
 
 st.title('See our results for yourself. Choose a model.')
 st.subheader('Click on "Submit" button after selecting a model & choosing an audio file.')
 with st.form('User_input'):
-    selected_model = st.selectbox('Model', ['Logistic_Regression_Classifier', 'Random_Forest_Classifier', 'K_Nearest_Neighbors_Classifier', 'Bayes_Classifier'])
+    selected_model = st.selectbox('Model', ['Logistic_Regression_Classifier', 'K_Nearest_Neighbors_Classifier', 'Naive_Bayes_Classifier'])
     wav_file = st.file_uploader('Select your own sound file')
     if wav_file is not None:
         uploaded_audio, _ = librosa.load(wav_file)
@@ -161,14 +156,13 @@ elif selected_model == "K_Nearest_Neighbors_Classifier":
         user_audio = extract_time_domain_features(uploaded_audio)
         knn_prediction = knn.predict([user_audio])
         st.subheader('Result: {} species'.format(knn_prediction))
-elif selected_model == "Random_Forest_Classifier":
+elif selected_model == "Naive_Bayes_Classifier":
     if not wav_file:
         st.subheader('No audio chosen.')
     else:
         user_audio = extract_time_domain_features(uploaded_audio)
-        random_forest_prediction = random_forest.predict([user_audio])
-        st.subheader('Result: {} species'.format(random_forest_prediction))
-
+        naive_bayes_prediction = naive_bayes.predict([user_audio])
+        st.subheader('Result: {} species'.format(naive_bayes_prediction))
 
 
 
@@ -264,7 +258,7 @@ st.caption('''We can see that both plots are different, but in this case they ar
 # ////////////////////////
 # FEATURE EXTRACTION
 # ////////////////////////
-st.header('Feature extraction data set (20 pts)')
+st.header('[3] Feature extraction data set (20 pts)')
 # AMPLITUDE ENVELOPE
 st.subheader('Amplitude Envelope')
 amplitude_env_col1, amplitude_env_col2 = st.columns(2, gap='large')
@@ -427,7 +421,7 @@ with features_col2:
 # ////////////////////////
 # DIMENSION ANALYSIS
 # ////////////////////////
-st.header('Dimension analysis (40 pts)')
+st.header('[4] Dimension analysis (40 pts)')
 st.caption('''We are using PCA in the dataset to perform a dimension analysis in order to find the number of dimensions by which we might cover at least 85% of cumulative variance.
 We are going to include 2D plots to visualize how the dimensions behave after being transformed. 
 Then by using LDA we'll repeat the same analysis and transformation over the original data set. Again we'll repeat
