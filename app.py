@@ -11,8 +11,29 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
 from sklearn import metrics
 from sklearn.metrics import classification_report
 from sklearn.metrics import ConfusionMatrixDisplay
+import pickle
 # Models
 from sklearn.linear_model import LogisticRegression
+
+
+
+
+
+
+# ////////////////////////
+# READING DATA FROM URL
+# ////////////////////////
+cat_df_url = 'https://raw.githubusercontent.com/feraranas/ML_Assessments/master/data/dataset_cat.csv'
+dog_df_url = 'https://raw.githubusercontent.com/feraranas/ML_Assessments/master/data/dataset_dog.csv'
+dataset_url = 'https://raw.githubusercontent.com/feraranas/ML_Assessments/master/data/dataset_full.csv'
+cat_df = pd.read_csv(cat_df_url)
+dog_df = pd.read_csv(dog_df_url)
+dataset = pd.read_csv(dataset_url)
+
+
+
+
+
 
 # ////////////////////////
 # AUXILIARY FUNCTIONS
@@ -35,6 +56,9 @@ def get_amplitude_envelope(signal,frame_size,window_size):
     envelope.append(max_amp)
   return np.array(envelope)
 
+def amplitude_envelope(signal, frame_size, window_size):
+  return np.array([max(signal[i:i+frame_size]) for i in range(0, signal.size, window_size)])
+
 def get_rms(signal,frame_size,window_size):
   new_signal = []
   for i in range(0,len(signal),window_size):
@@ -42,6 +66,25 @@ def get_rms(signal,frame_size,window_size):
     rmse_val = np.sqrt(1 / len(frame_data) * sum(i**2 for i in frame_data))
     new_signal.append(rmse_val)
   return np.array(new_signal)
+
+def extract_time_domain_features(animal_data):
+    FRAME_SIZE = 1024
+    WINDOW_SIZE = 128
+    ae = amplitude_envelope(animal_data,FRAME_SIZE,WINDOW_SIZE)
+    rms = librosa.feature.rms(y=animal_data, frame_length=FRAME_SIZE, hop_length=WINDOW_SIZE)[0]
+    zcr = librosa.feature.zero_crossing_rate(animal_data, frame_length=FRAME_SIZE, hop_length=WINDOW_SIZE)[0]
+    ae_stats = stats.describe(ae)
+    rms_stats = stats.describe(rms)
+    zcr_stats = stats.describe(zcr)
+    fq = np.abs(np.fft.fft(animal_data))
+    fq_stats = stats.describe(fq)
+    data_features_vector=[ae_stats.minmax[0],ae_stats.minmax[1],ae_stats.mean,ae_stats.variance,
+                         rms_stats.minmax[0],rms_stats.minmax[1],rms_stats.mean,rms_stats.variance,
+                         zcr_stats.minmax[0],zcr_stats.minmax[1],zcr_stats.mean,zcr_stats.variance,
+                         fq_stats.minmax[0], fq_stats.minmax[1], fq_stats.mean, fq_stats.variance]
+    return data_features_vector
+
+
 
 # ////////////////////////
 # TITLE & TEAM INFO
@@ -62,15 +105,81 @@ team = pd.DataFrame({
      })
 st.write(team)
 
+
+
+
+
+
+
 # ////////////////////////
-# READING DATA FROM URL
+# START -> CHOOSE A MODEL
 # ////////////////////////
-cat_df_url = 'https://raw.githubusercontent.com/feraranas/ML_Assessments/master/data/dataset_cat.csv'
-dog_df_url = 'https://raw.githubusercontent.com/feraranas/ML_Assessments/master/data/dataset_dog.csv'
-dataset_url = 'https://raw.githubusercontent.com/feraranas/ML_Assessments/master/data/dataset_full.csv'
-cat_df = pd.read_csv(cat_df_url)
-dog_df = pd.read_csv(dog_df_url)
-dataset = pd.read_csv(dataset_url)
+st.title('ML model (20 pts)')
+st.caption('We trained the following models:')
+log_reg_pickle = open('./models/logistic_regression_model.pkl', 'rb')
+log_reg = pickle.load(log_reg_pickle)
+knn_pickle = open('./models/knn_model.pkl', 'rb')
+knn = pickle.load(knn_pickle)
+random_forest_pickle = open('./models/random_forest_model.pkl', 'rb')
+random_forest = pickle.load(random_forest_pickle)
+model_col1, model_col2 = st.columns(2, gap='large')
+with model_col1:
+     st.write('Linear Regression Classifier')
+     st.write(log_reg)
+with model_col2:
+     st.write('Random Forest Classifier')
+
+
+model_col3, model_col4 = st.columns(2, gap='large')
+with model_col3:
+     st.write('K Nearest Neighbors Classifier')
+     
+with model_col4:
+     st.write('Bayes Classifier')
+
+
+st.title('See our results for yourself. Choose a model.')
+st.subheader('Click on "Submit" button after selecting a model & choosing an audio file.')
+with st.form('User_input'):
+    selected_model = st.selectbox('Model', ['Logistic_Regression_Classifier', 'Random_Forest_Classifier', 'K_Nearest_Neighbors_Classifier', 'Bayes_Classifier'])
+    wav_file = st.file_uploader('Select your own sound file')
+    if wav_file is not None:
+        uploaded_audio, _ = librosa.load(wav_file)
+    st.form_submit_button()
+
+if selected_model == "Logistic_Regression_Classifier":
+    if not wav_file:
+        st.subheader('No audio chosen.')
+    else:
+        user_audio = extract_time_domain_features(uploaded_audio)
+        log_reg_prediction = log_reg.predict([user_audio])
+        st.subheader('Result: {} species'.format(log_reg_prediction))
+elif selected_model == "K_Nearest_Neighbors_Classifier":
+    if not wav_file:
+        st.subheader('No audio chosen.')
+    else:
+        user_audio = extract_time_domain_features(uploaded_audio)
+        knn_prediction = knn.predict([user_audio])
+        st.subheader('Result: {} species'.format(knn_prediction))
+elif selected_model == "Random_Forest_Classifier":
+    if not wav_file:
+        st.subheader('No audio chosen.')
+    else:
+        user_audio = extract_time_domain_features(uploaded_audio)
+        random_forest_prediction = random_forest.predict([user_audio])
+        st.subheader('Result: {} species'.format(random_forest_prediction))
+
+
+
+
+
+
+
+
+
+
+
+
 
 # ////////////////////////
 # IMPORTED LIBRARIES
@@ -98,6 +207,12 @@ with libraries_col2:
      st.caption('OS was imported to read files from local directories.')
      st.caption('TQDM was imported to unzip files from local directories.')
      st.caption('LIBROSA was imported to read audio files.')
+
+
+
+
+
+
 
 # ////////////////////////
 # DATA VISUALIZATION
@@ -133,6 +248,18 @@ with data_vis_col2:
 st.caption('''We can see that both plots are different, but in this case they are periodic waves.
            In terms of **Amplitude** the dog's wave has more amplitude than the cat's wave, this menas it has a higher air pressure disturbance, in this case it's something interesting because the dog is just barking and it also appears that is not that close to the microphone that is recording the audio, this means that the dog's bark is more loudly and powerful, in contrast the cat's audio has different changes in it's shape, this is because the animal is not only meowing, it's also purring, that creates a different sample with different tonalities.
            Another thing to consider is that the frequency of the cat's wave and the dog's wave is the same, both are equal to 22050 Hz.''')
+
+
+
+
+
+
+
+
+
+
+
+
 
 # ////////////////////////
 # FEATURE EXTRACTION
@@ -291,6 +418,12 @@ with features_col2:
     dogs_tmp = pd.DataFrame(dog_df.values, columns=[i for i in dog_df.columns])
     st.write(dogs_tmp.head())
 
+
+
+
+
+
+
 # ////////////////////////
 # DIMENSION ANALYSIS
 # ////////////////////////
@@ -301,9 +434,7 @@ Then by using LDA we'll repeat the same analysis and transformation over the ori
 the visualization process to see how it performs now the correlation.''')
 
 dimension_a_col1, dimension_a_col2 = st.columns(2, gap='large')
-X = dataset.drop(['file_name'], axis="columns")
-X = X.drop(['audio_wav'], axis="columns")
-X = X.drop(['Animal'], axis="columns")
+X = dataset.drop(['Animal'], axis="columns")
 y = pd.DataFrame(dataset['Animal'].values, columns=['Animal'])
 with dimension_a_col1:
      st.caption('''The complete dataset is:''')
@@ -336,6 +467,14 @@ sc = StandardScaler()
 st.write(sc)
 X_train = sc.fit_transform(X_train)
 X_test = sc.transform(X_test)
+
+
+
+
+
+
+
+
 
 # ////////////////////////////////////////////////
 # /////////////////// PCA ////////////////////////
@@ -371,7 +510,7 @@ st.caption('''Result:''')
 st.write(pd.DataFrame(
      data    = pca.components_,
      columns = X.columns,
-     index   = ['PC1', 'PC2', 'PC3', 'PC4','PC5', 'PC6', 'PC7', 'PC8','PC9', 'PC10', 'PC11', 'PC12','PC13', 'PC14', 'PC15', 'PC16', 'PC17', 'PC18', 'PC19']
+     index   = ['PC1', 'PC2', 'PC3', 'PC4','PC5', 'PC6', 'PC7', 'PC8','PC9', 'PC10', 'PC11', 'PC12','PC13', 'PC14', 'PC15', 'PC16']
 ))
 st.caption('''
 Plotting the components in a heat map helps to understand how original dimensions influence in the new component. For example in the first component (the one with more variance) Zero Cross rate helps better to express data in terms of variance.
@@ -468,6 +607,12 @@ plt.ylabel("Second Principal Component", fontsize=14)
 # Display the plot using Streamlit
 st.pyplot(fig)
 
+
+
+
+
+
+
 # ////////////////////////////////////////////////
 # /////////////////// LDA ////////////////////////
 # ////////////////////////////////////////////////
@@ -501,45 +646,6 @@ plt.ylabel("True Labels", fontsize=14)
 # Display the plot using Streamlit
 st.pyplot(fig)
 
-# ////////////////////////
-# ML MODELS
-# ////////////////////////
-st.sidebar.title("ML Models")
-st.sidebar.subheader("ML Models")
-
-st.header('ML model (20 pts)')
-st.caption('We trained the following models')
-classifier = LogisticRegression()
-model_col1, model_col2 = st.columns(2, gap='large')
-with model_col1:
-     st.write('Linear Regression Classifier')
-     st.write(classifier)
-with model_col2:
-     st.write('Random Forest Classifier')
-     st.write(classifier)
-model_col3, model_col4 = st.columns(2, gap='large')
-with model_col3:
-     st.write('K Nearest Neighbors Classifier')
-     st.write(classifier)
-with model_col4:
-     st.write('Bayes Classifier')
-     st.write(classifier)
-st.write('Linear Regression')
-st.write(classifier)
 
 
 
-
-
-st.caption('Choose a model.')
-selected_model = st.selectbox('Model', ['Logistic Regression Classifier', 
-                                        'Random Forest Classifier',
-                                        'K Nearest Neighbors Classifier',
-                                        'Bayes Classifier'])
-
-
-wav_file = st.file_uploader('Select your own sound file')
-if wav_file is not None:
-     cat_audio, cat_sr = librosa.load(wav_file)
-else:
-     cat_audio, cat_sr = librosa.load('./cat_166.wav')
