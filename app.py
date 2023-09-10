@@ -261,6 +261,14 @@ st.caption('''We can see that both plots are different, but in this case they ar
 st.header('[3] Feature extraction data set (20 pts)')
 # AMPLITUDE ENVELOPE
 st.subheader('Amplitude Envelope')
+st.caption('''
+    - ADSR stands for Attack, Decay, Sustain, and Release, which are stages in sound synthesis.
+    - In the context of time domain features, the amplitude envelope characterizes how a sound evolves over time.
+    - Attack: The initial increase in amplitude when a sound is triggered.
+    - Decay: The decrease in amplitude after the attack, leading to a sustained level.
+    - Sustain: The constant amplitude during the main part of the sound.
+    - Release: The gradual decrease in amplitude after the sound is released or stopped.
+''')
 amplitude_env_col1, amplitude_env_col2 = st.columns(2, gap='large')
 with amplitude_env_col1:
      st.markdown('Example: cat_166.wav')
@@ -282,10 +290,13 @@ with amplitude_env_col2:
      plt.plot(time, amplitude_envelope, color="r")
      st.pyplot(fig)
 
-st.caption('''We can see that [...INSERT AN EXPLANATION FOR AMPLITUDE ENVELOPE]''')
-
 # RMS
 st.subheader('RMS')
+st.caption('''
+    - RMS measures the average power or energy of a signal over a period of time.
+    - It calculates the square root of the mean of the squared amplitudes of the signal.
+    - RMS is often used to estimate the loudness or energy of an audio segment.
+''')
 rms_col1, rms_col2 = st.columns(2, gap='large')
 with rms_col1:
      st.markdown('Example: cat_166.wav')
@@ -307,8 +318,6 @@ with rms_col2:
      plt.plot(time, rms, color="b")
      st.pyplot(fig)
 
-st.caption('''We can see that [...INSERT AN EXPLANATION FOR RMS]''')
-
 fig, ax = plt.subplots()
 librosa.display.waveshow(cat_audio, color='r',alpha=0.5)
 librosa.display.waveshow(dog_audio, color='b',alpha=0.5)
@@ -316,6 +325,11 @@ st.pyplot(fig)
 
 # FREQUENCY DOMAIN
 st.subheader('Frequency Domain')
+st.caption('''
+    - Frequency represents the number of cycles (oscillations) of a sound wave per second.
+    - It is measured in Hertz (Hz) and determines the pitch of a sound.
+    - High-frequency sounds have a higher pitch, while low-frequency sounds have a lower pitch.
+''')
 freq_col1, freq_col2 = st.columns(2, gap='large')
 with freq_col1:
      st.markdown('Example: cat_166.wav')
@@ -337,8 +351,6 @@ with freq_col2:
      plt.ylabel("Amplitude")
      st.pyplot(fig)
 
-st.caption('''We can see that [...INSERT AN EXPLANATION FOR FREQ DOMAIN GRAPHS ABOVE]''')
-
 freq2_col1, freq2_col2 = st.columns(2, gap='large')
 with freq2_col1:
      st.write("Nobs:", stats.describe(cat_audio)[0])
@@ -355,7 +367,49 @@ with freq2_col2:
      st.write("skewness:", stats.describe(dog_audio)[4])
      st.write("kurtosis:", stats.describe(dog_audio)[5])
 
-st.caption('''We can see that [...INSERT AN EXPLANATION FOR nobs, minmax, mean, skewness, etc]''')
+st.caption('''
+The stats.describe function returns an object that contains several statistical properties of the dataset. We can analyze the following properties:''')
+st.caption('''- nobs: The number of observations (data points) in the dataset.''')
+st.caption('''- minmax: A tuple containing the minimum and maximum values in the dataset.''')
+st.caption('''- mean: The arithmetic mean (average) of the dataset.''')
+st.caption('''- variance: The variance, which measures the spread or dispersion of the data.''')
+st.caption('''- skewness: A measure of the skewness (asymmetry) of the data distribution.''')
+st.caption('''- kurtosis: A measure of the kurtosis (tailedness) of the data distribution.''')
+st.caption('''- std_dev: The standard deviation, which is the square root of the variance.''')
+st.caption('''- sem: The standard error of the mean, which estimates the standard deviation of the sample mean.''')
+
+st.caption('''1. `nobs` (Number of Observations):
+   - There are 28,522 observations or data points in your dataset. This tells you the total number of data instances you have for analysis.''')
+
+st.caption('''
+    2. `minmax` (Minimum and Maximum Values):
+   - The minimum value in your dataset is approximately -0.996.
+   - The maximum value in your dataset is approximately 0.982.
+   - These values provide information about the range or spread of your data. In your case, your data varies between -0.996 and 0.982.''')
+
+st.caption('''3. `mean` (Mean or Average):
+   - The mean value of your dataset is approximately 0.0000186 (or 1.8618754e-05 in scientific notation).
+   - The mean represents the central tendency of your data. In this case, it's close to zero, indicating that, on average, your data is centered around this value.''')
+
+st.caption('''4. `variance` (Variance):
+   - The variance of our dataset is approximately 0.0857.
+   - Variance measures the spread or dispersion of your data. A higher variance suggests greater variability among data points.''')
+
+st.caption('''5. `skewness` (Skewness):
+   - The skewness of our dataset is approximately -0.156.
+   - Skewness measures the asymmetry of the data distribution. A negative skewness indicates a slight leftward (negative) skew, meaning the data distribution has a longer tail on the left side.''')
+
+st.caption('''6. `kurtosis` (Kurtosis):
+   - The kurtosis of our dataset is approximately 2.063.
+   - Kurtosis measures the tailedness or peakedness of the data distribution. A value greater than 3 suggests a distribution with heavier tails and a sharper peak (leptokurtic).''')
+
+st.caption('''
+- We have a moderate number of observations (28,522).
+- The data values range between approximately -0.996 and 0.982.
+- On average, the data is very close to zero.
+- There is some variability in the data, as indicated by the variance.
+- The data distribution is slightly negatively skewed, meaning it has a longer tail on the left.
+- The kurtosis suggests that the distribution has heavier tails and a sharper peak compared to a normal distribution.''')
 
 # SPECTOGRAM
 st.subheader('Spectogram')
@@ -378,7 +432,8 @@ with spectogram_col2:
      fig.colorbar(img, ax=ax, format="%+2.f dB")
      st.pyplot(fig)
 
-st.caption('''We can see that [...INSERT AN EXPLANATION FOR Spectograms & comparison]''')
+st.caption('''In the following spectrogram we used a visual representation of the frequency content of a signal over time. We can visualize a representation of the amplitude at a particular moment in time. Bright regions indicate strong or promiment frequencies and darker regions indicate weaker frequencies.
+           Also, we can visualize horizontal lines that may correspond to continuous tones or steady-state sounds. But in the case of some dogs audio, vertical lines may represent abrupt changes or transient events.''')
 
 st.subheader('Grand Features')
 st.caption('''Here, we add an explanation for FEATURE EXTRACTION [Time Domain Features]. 
