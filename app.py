@@ -90,7 +90,7 @@ def extract_time_domain_features(animal_data):
 # ////////////////////////
 # TITLE & TEAM INFO
 # ////////////////////////
-st.title('Final Assessment')
+st.title('Cats & Dogs Classifier analysis')
 st.header('Equipo 4')
 team = pd.DataFrame({
      'Alumno': [
