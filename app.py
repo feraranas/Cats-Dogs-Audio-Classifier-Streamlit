@@ -4,6 +4,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 import librosa
 from scipy import stats
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
+from sklearn import metrics
+from sklearn.metrics import classification_report
+from sklearn.metrics import ConfusionMatrixDisplay
+# Models
+from sklearn.linear_model import LogisticRegression
 
 # ////////////////////////
 # AUXILIARY FUNCTIONS
@@ -56,10 +65,12 @@ st.write(team)
 # ////////////////////////
 # READING DATA FROM URL
 # ////////////////////////
-cat_df_url = 'https://raw.githubusercontent.com/feraranas/ML_Assessments/master/data/cat_df.csv'
-dog_df_url = 'https://raw.githubusercontent.com/feraranas/ML_Assessments/master/data/dog_df.csv'
+cat_df_url = 'https://raw.githubusercontent.com/feraranas/ML_Assessments/master/data/dataset_cat.csv'
+dog_df_url = 'https://raw.githubusercontent.com/feraranas/ML_Assessments/master/data/dataset_dog.csv'
+dataset_url = 'https://raw.githubusercontent.com/feraranas/ML_Assessments/master/data/dataset_full.csv'
 cat_df = pd.read_csv(cat_df_url)
 dog_df = pd.read_csv(dog_df_url)
+dataset = pd.read_csv(dataset_url)
 
 # ////////////////////////
 # IMPORTED LIBRARIES
@@ -97,7 +108,7 @@ dog_audio, dog_sr = librosa.load('./dog_barking_74.wav')
 data_vis_col1, data_vis_col2 = st.columns(2, gap='large')
 with data_vis_col1:
    st.subheader("Cat Dataset")
-   st.write(pd.DataFrame(dog_df[['file_name', 'audio_wav']].values, columns=['file_name', 'audio_wav']))
+   st.write(cat_df.head())
    st.caption('Loaded Cats dataset with {1323.899909297052} sec of audio.')
    st.markdown('Example: cat_166.wav')
    audio_file_cat = open('./cat_166.wav', 'rb')
@@ -109,7 +120,7 @@ with data_vis_col1:
 
 with data_vis_col2:
    st.subheader("Dog Dataset")
-   st.write(pd.DataFrame(cat_df[['file_name', 'audio_wav']].values, columns=['file_name', 'audio_wav']))
+   st.write(dog_df.head())
    st.caption('Loaded Dogs dataset with {598.4407256235827} sec of audio.')
    st.markdown('Example: dog_barking_74.wav')
    audio_file_dog = open('./dog_barking_74.wav', 'rb')
@@ -248,10 +259,7 @@ with spectogram_col2:
 
 st.caption('''We can see that [...INSERT AN EXPLANATION FOR Spectograms & comparison]''')
 
-# ////////////////////////
-# DIMENSION ANALYSIS
-# ////////////////////////
-st.header('Dimension analysis (40 pts)')
+st.subheader('Grand Features')
 st.caption('''Here, we add an explanation for FEATURE EXTRACTION [Time Domain Features]. 
            We use "from scipy import stats" to extract max_amplitude, min_amplitude, minmax, mean & variance. From each wav_file in the dataset. We already have rms and zcr. 
            So now we have the following features:''')
@@ -267,19 +275,271 @@ st.markdown('''min_zcr: ''')
 st.markdown('''max_zcr: ''')
 st.markdown('''mean_zcr: ''')
 st.markdown('''variance_zcr: ''')
+st.markdown('''min_fq''')
+st.markdown('''max_fq''')
+st.markdown('''mean_fq''')
+st.markdown('''variance_fq''')
+
+features_col1, features_col2 = st.columns(2, gap='large')
+with features_col1:
+     st.subheader("Cat Dataset")
+     cats_tmp = pd.DataFrame(cat_df.values, columns=[i for i in cat_df.columns])
+     st.write(cats_tmp.head())
+
+with features_col2:
+    st.subheader("Dog Dataset")
+    dogs_tmp = pd.DataFrame(dog_df.values, columns=[i for i in dog_df.columns])
+    st.write(dogs_tmp.head())
+
+# ////////////////////////
+# DIMENSION ANALYSIS
+# ////////////////////////
+st.header('Dimension analysis (40 pts)')
+st.caption('''We are using PCA in the dataset to perform a dimension analysis in order to find the number of dimensions by which we might cover at least 85% of cumulative variance.
+We are going to include 2D plots to visualize how the dimensions behave after being transformed. 
+Then by using LDA we'll repeat the same analysis and transformation over the original data set. Again we'll repeat
+the visualization process to see how it performs now the correlation.''')
 
 dimension_a_col1, dimension_a_col2 = st.columns(2, gap='large')
+X = dataset.drop(['file_name'], axis="columns")
+X = X.drop(['audio_wav'], axis="columns")
+X = X.drop(['Animal'], axis="columns")
+y = pd.DataFrame(dataset['Animal'].values, columns=['Animal'])
 with dimension_a_col1:
-     st.subheader("Cat Dataset")
-     st.write(pd.DataFrame(cat_df.values, columns=[i for i in cat_df.columns]))
+     st.caption('''The complete dataset is:''')
+     complete_dataset = pd.DataFrame(X.values, columns=[i for i in X.columns])
+     st.write(complete_dataset.head())
 
 with dimension_a_col2:
-    st.subheader("Dog Dataset")
-    st.write(pd.DataFrame(dog_df.values, columns=[i for i in dog_df.columns]))
+     st.caption('''For this part the first thing is to select the label that we are trying to predict, in our case Dog/Cat.''')
+     st.write(y)
 
+st.subheader('Splitting the dataset for future validations')
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
+split_col1, split_col2, split_col3, split_col4 = st.columns(4, gap='large')
+with split_col1:
+    st.markdown('X trained data')
+    st.write(X_train.head())
+with split_col2:
+    st.markdown('X test data')
+    st.write(X_test.head())
+with split_col3:
+    st.markdown('y trained data')
+    st.write(y_train.head())
+with split_col4:
+    st.markdown('y test data')
+    st.write(y_test.head())
 
+st.subheader('Standard Scaler')
+st.caption('''We are going to apply an Standardization Scaler to the X data.''')
+sc = StandardScaler()
+st.write(sc)
+X_train = sc.fit_transform(X_train)
+X_test = sc.transform(X_test)
+
+# ////////////////////////////////////////////////
+# /////////////////// PCA ////////////////////////
+# ////////////////////////////////////////////////
+st.subheader('PCA')
+st.caption('''The Principal Component Analysis it's a powerful tool to analize data and reduce dimensionality. 
+           This can aid with the data visualization and modeling.''')
+st.caption('''By default we can create PCA for all the components (dimensions) but it is also posible to specify how many components we want to analyse / reduce, also we can send as parameter what is the minimum variance we are looking for to keep.''')
+st.caption('''The code to do this is:''')
+
+pca = PCA()
+pca_X_train = pca.fit_transform(X_train)
+pca_X_test = pca.transform(X_test)
+
+pca_code = '''
+     from sklearn.decomposition import PCA
+     pca = PCA()
+     pca_X_train = pca.fit_transform(X_train)
+     pca_X_test = pca.transform(X_test)
+'''
+st.code(pca_code, language="python", line_numbers=False)
+st.caption('''In this example we are using to methods (fit_transform) that performs the analys and transformation of the obervations all in once. the second method /(transform) will only transform the data based on the analysis maded in fir_transofrm method.''')
+st.caption('''Let's see how the weights our new dimension is conformed, each component (sorted by variance) will transform each value of the dataset by the following dimension proportions.''')
+
+pca_components = '''
+     pd.DataFrame(
+          data    = pca.components_,
+          columns = X.columns,
+          index   = ['PC1', 'PC2', 'PC3', 'PC4','PC5', 'PC6', 'PC7', 'PC8','PC9', 'PC10', 'PC11', 'PC12','PC13', 'PC14', 'PC15', 'PC16', 'PC17', 'PC18', 'PC19']
+)'''
+st.code(pca_components, language="python", line_numbers=False)
+st.caption('''Result:''')
+st.write(pd.DataFrame(
+     data    = pca.components_,
+     columns = X.columns,
+     index   = ['PC1', 'PC2', 'PC3', 'PC4','PC5', 'PC6', 'PC7', 'PC8','PC9', 'PC10', 'PC11', 'PC12','PC13', 'PC14', 'PC15', 'PC16', 'PC17', 'PC18', 'PC19']
+))
+st.caption('''
+Plotting the components in a heat map helps to understand how original dimensions influence in the new component. For example in the first component (the one with more variance) Zero Cross rate helps better to express data in terms of variance.
+''')
+fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(10, 6))
+componentes = pca.components_
+plt.imshow(componentes.T, cmap='viridis', aspect='auto')
+plt.yticks(range(len(X.columns)), X.columns)
+plt.xticks(range(len(X.columns)), np.arange(pca.n_components_) + 1)
+plt.grid(False)
+plt.colorbar()
+st.pyplot(fig)
+
+st.subheader('Variance Ratio (Per Component)')
+st.caption('''Another important measure is the variance ratio, this means how much in percentage of variance each component represents, for example component 1 just by it self representes 58%.''')
+
+fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(6, 4))
+ax.bar(
+    x      = np.arange(pca.n_components_) + 1,
+    height = pca.explained_variance_ratio_
+)
+
+for x, y in zip(np.arange(len(X.columns)) + 1, pca.explained_variance_ratio_):
+    label = round(y, 2)
+    ax.annotate(
+        label,
+        (x,y),
+        textcoords="offset points",
+        xytext=(0,10),
+        ha='center'
+    )
+
+ax.set_xticks(np.arange(pca.n_components_) + 1)
+ax.set_ylim(0, 1.1)
+ax.set_title('Variance percentage per component')
+ax.set_xlabel('Principal component')
+ax.set_ylabel('Variance')
+st.pyplot(fig)
+
+st.subheader('Accumulative Variance')
+st.caption('''Actually we can acumulate the percentage by including components, if we do it in order , then we might be able to perform an elbow test, this is, what is the minimum number of components needed to capture a minumum percentage of variance in my new dimension space (the elbow).''')
+fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(6, 4))
+ax.plot(
+    np.arange(len(X.columns)) + 1,
+    pca.explained_variance_ratio_.cumsum(),
+    marker = 'o'
+)
+
+for x, y in zip(np.arange(len(X.columns)) + 1, pca.explained_variance_ratio_.cumsum()):
+    label = round(y, 2)
+    ax.annotate(
+        label,
+        (x,y),
+        textcoords="offset points",
+        xytext=(0,10),
+        ha='center'
+    )
+
+ax.set_ylim(0, 1.1)
+ax.set_xticks(np.arange(pca.n_components_) + 1)
+ax.set_title('Acumulative variance')
+ax.set_xlabel('Principal component')
+ax.set_ylabel('Variance')
+st.pyplot(fig)
+
+st.caption('''We can stablish a number of components and apply the fit and transform methods too.''')
+pca = PCA(3)
+projected = pca.fit_transform(X_train)
+st.write('X_train data shape (Rows, Cols):', X_train.data.shape)
+st.write('Projected shape (Rows, Cols):', projected.shape)
+
+st.subheader('3D Graph Representation')
+Xax = projected[:, 0]
+Yax = projected[:, 1]
+Zax = projected[:, 2]
+labels = y_train
+
+cdict = {"Cat": 'red', "Dog": 'green'}
+marker = {"Cat": '*', "Dog": 'o'}
+alpha = {"Cat": 0.3, "Dog": 0.5}
+
+# Create 3D scatter plot
+fig = plt.figure()
+ax = fig.add_subplot(projection='3d')
+fig.patch.set_facecolor('white')
+
+for l in np.unique(labels):
+    ix = np.where(labels == l)
+    ax.scatter(Xax[[ix]], Yax[[ix]], Zax[[ix]], c=cdict[l], label=l, s=40, marker=marker[l], alpha=alpha[l])
+
+plt.xlabel("First Principal Component", fontsize=14)
+plt.ylabel("Second Principal Component", fontsize=14)
+
+# Display the plot using Streamlit
+st.pyplot(fig)
+
+# ////////////////////////////////////////////////
+# /////////////////// LDA ////////////////////////
+# ////////////////////////////////////////////////
+st.subheader('Linear Discriminant Analysis')
+lda = LDA(n_components=1)
+X_train = lda.fit_transform(X_train, y_train)
+y_predict = lda.predict(X_test)
+
+fig = plt.figure()
+ax = fig.add_subplot(projection='3d')
+fig.patch.set_facecolor('white')
+for l in np.unique(labels):
+    ix=np.where(labels==l)
+    ax.scatter(Xax[[ix]],ys=0,c=cdict[l],label=l,s=40,marker=marker[l],alpha=alpha[l])
+st.pyplot(fig)
+# ////////////// CONFUSION MATRIX ////////////////
+# ////////////////////////////////////////////////
+st.subheader('Confusion Matrix of LDA')
+confusion_matrix = metrics.confusion_matrix(y_test, y_predict)
+accuracy = metrics.accuracy_score(y_test, y_predict)
+
+# Display the accuracy score
+st.write(f"Accuracy: {accuracy}")
+
+# Display the confusion matrix using ConfusionMatrixDisplay
+fig, ax = plt.subplots(figsize=(8, 6))
+disp = ConfusionMatrixDisplay(confusion_matrix=confusion_matrix, display_labels=[False, True])
+disp.plot(cmap='Blues', ax=ax)
+plt.xlabel("Predicted Labels", fontsize=14)
+plt.ylabel("True Labels", fontsize=14)
+# Display the plot using Streamlit
+st.pyplot(fig)
 
 # ////////////////////////
 # ML MODELS
 # ////////////////////////
+st.sidebar.title("ML Models")
+st.sidebar.subheader("ML Models")
+
 st.header('ML model (20 pts)')
+st.caption('We trained the following models')
+classifier = LogisticRegression()
+model_col1, model_col2 = st.columns(2, gap='large')
+with model_col1:
+     st.write('Linear Regression Classifier')
+     st.write(classifier)
+with model_col2:
+     st.write('Random Forest Classifier')
+     st.write(classifier)
+model_col3, model_col4 = st.columns(2, gap='large')
+with model_col3:
+     st.write('K Nearest Neighbors Classifier')
+     st.write(classifier)
+with model_col4:
+     st.write('Bayes Classifier')
+     st.write(classifier)
+st.write('Linear Regression')
+st.write(classifier)
+
+
+
+
+
+st.caption('Choose a model.')
+selected_model = st.selectbox('Model', ['Logistic Regression Classifier', 
+                                        'Random Forest Classifier',
+                                        'K Nearest Neighbors Classifier',
+                                        'Bayes Classifier'])
+
+
+wav_file = st.file_uploader('Select your own sound file')
+if wav_file is not None:
+     cat_audio, cat_sr = librosa.load(wav_file)
+else:
+     cat_audio, cat_sr = librosa.load('./cat_166.wav')
