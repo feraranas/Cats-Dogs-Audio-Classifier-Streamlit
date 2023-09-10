@@ -451,10 +451,10 @@ st.markdown('''min_zcr: Smallest ZCR value observed in the audio. It indicates t
 st.markdown('''max_zcr: Largest ZCR value observed in the audio. It indicates the maximum rate of signal changes over time.''')
 st.markdown('''mean_zcr: Represents the average ZCR value over the entire audio. It provides insight into the central tendency of the rate of signal changes.''')
 st.markdown('''variance_zcr: Quantifies the spread or dispersion of the ZCR values. A higher variance suggests greater variability in the rate of signal changes over time.''')
-st.markdown('''min_fq''')
-st.markdown('''max_fq''')
-st.markdown('''mean_fq''')
-st.markdown('''variance_fq''')
+st.markdown('''min_fq: Lowest frequency component in the audio. Useful to know the lowest frequency at which a sound or signal is detected.''')
+st.markdown('''max_fq: Maximum frequency component in the audio. Useful for detecting high-frequency noise or identifying the upper limit of frequency content in a signal.''')
+st.markdown('''mean_fq: Average frequency content in the audio. A higher mean frequency may indicate a signal with a higher pitch or more high-frequency content.''')
+st.markdown('''variance_fq: A high frequency variance suggests that the signal contains a wide range of frequencies, whereas a low variance indicates a more concentrated or narrowband frequency content.''')
 
 features_col1, features_col2 = st.columns(2, gap='large')
 with features_col1:
